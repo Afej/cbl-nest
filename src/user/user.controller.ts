@@ -6,17 +6,22 @@ import {
   Patch,
   Param,
   Delete,
+  UseGuards,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto, UpdateUserDto } from './dto';
-import { Role, Roles } from 'src/common';
+import { Role } from 'src/common';
+import { AuthGuard } from 'src/auth/guards/auth.guard';
+import { Roles } from 'src/auth/decorators/roles.decorator';
+import { RolesGuard } from 'src/auth/guards/roles.guard';
 
 @Controller('users')
+@UseGuards(AuthGuard, RolesGuard)
+@Roles(Role.Admin)
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
   @Post()
-  @Roles(Role.Admin)
   create(@Body() createUserDto: CreateUserDto) {
     return this.userService.create(createUserDto);
   }

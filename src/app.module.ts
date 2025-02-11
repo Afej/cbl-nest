@@ -1,9 +1,10 @@
 import { Module } from '@nestjs/common';
-import { UserModule } from './user/user.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { MongooseModule } from '@nestjs/mongoose';
+
+import { UserModule } from './user/user.module';
 import { AuthModule } from './auth/auth.module';
 import { WalletModule } from './wallet/wallet.module';
-import { MongooseModule } from '@nestjs/mongoose';
 import configuration from './config/configuration';
 
 @Module({
@@ -20,8 +21,8 @@ import configuration from './config/configuration';
       }),
       inject: [ConfigService],
     }),
-    AuthModule,
     UserModule,
+    AuthModule,
     WalletModule,
   ],
 })

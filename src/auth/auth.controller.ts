@@ -27,10 +27,10 @@ export class AuthController {
   @Get('me')
   @HttpCode(HttpStatus.OK)
   authenticatedUser(@Request() req: AuthGuardRequest) {
-    const user = this.authService.getAuthUser(req.id);
-    return user;
+    return req.user;
   }
 
+  @UseGuards(AuthGuard)
   @Post('logout')
   @HttpCode(HttpStatus.NO_CONTENT)
   logout() {

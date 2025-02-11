@@ -11,7 +11,7 @@ export class TransactionDetails {
   to?: User;
 
   @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'User' })
-  made_by?: User;
+  madeBy?: User;
 
   @Prop({ required: true })
   amount: number;

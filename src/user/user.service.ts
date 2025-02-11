@@ -2,19 +2,21 @@ import {
   Injectable,
   NotFoundException,
   ConflictException,
+  BadRequestException,
 } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { ConfigService } from '@nestjs/config';
-import { Model } from 'mongoose';
+import { InjectConnection, InjectModel } from '@nestjs/mongoose';
+import { Connection, Model } from 'mongoose';
 import { User } from './schemas/user.schema';
 import { CreateUserDto, UpdateUserDto } from './dto';
 import { comparePassword, hashPassword } from '../common';
+import { Wallet } from 'src/wallet/schemas/wallet.schema';
 
 @Injectable()
 export class UserService {
   constructor(
     @InjectModel(User.name) private userModel: Model<User>,
-    private configService: ConfigService,
+    @InjectModel(Wallet.name) private walletModel: Model<Wallet>,
+    @InjectConnection() private connection: Connection,
   ) {}
 
   async create(createUserDto: CreateUserDto): Promise<User> {
@@ -25,14 +27,27 @@ export class UserService {
       throw new ConflictException('Email already exists');
     }
 
-    const hashedPassword = hashPassword(createUserDto.password);
+    try {
+      // Hash the password before saving
+      const hashedPassword = hashPassword(createUserDto.password);
+      const userWithHashedPassword = {
+        ...createUserDto,
+        password: hashedPassword,
+      };
 
-    const user = new this.userModel({
-      ...createUserDto,
-      password: hashedPassword,
-    });
+      const newUser = new this.userModel(userWithHashedPassword);
+      await newUser.save();
 
-    return user.save();
+      // Create wallet
+      const wallet = new this.walletModel({
+        userId: newUser._id,
+      });
+      await wallet.save();
+
+      return newUser;
+    } catch (error) {
+      throw new BadRequestException('Failed to create user');
+    }
   }
 
   async findAll(populateRelations = true): Promise<User[]> {

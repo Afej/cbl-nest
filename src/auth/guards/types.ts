@@ -1,3 +1,5 @@
+import { IUser } from 'src/user/types';
+
 export type AuthGuardRequest = {
-  id: string;
+  user: IUser;
 };

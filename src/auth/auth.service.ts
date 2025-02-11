@@ -66,7 +66,7 @@ export class AuthService {
       throw new NotFoundException('User not found');
     }
 
-    return user;
+    return user.toJSON();
   }
 
   logout() {

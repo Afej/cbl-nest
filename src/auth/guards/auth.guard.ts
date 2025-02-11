@@ -7,10 +7,14 @@ import {
 import { Request } from 'express';
 import { decryptJwtToken } from '../../common';
 import { ConfigService } from '@nestjs/config';
+import { AuthService } from '../auth.service';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
-  constructor(private configService: ConfigService) {}
+  constructor(
+    private configService: ConfigService,
+    private authService: AuthService,
+  ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
@@ -27,7 +31,10 @@ export class AuthGuard implements CanActivate {
         secret,
       });
 
-      request['id'] = id;
+      // get auth user
+      const user = await this.authService.getAuthUser(id);
+
+      request['user'] = user;
     } catch {
       throw new UnauthorizedException();
     }
