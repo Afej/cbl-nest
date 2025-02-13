@@ -39,7 +39,7 @@ export class AuthController {
     @Body('currentPassword') currentPassword: string,
     @Body('newPassword') newPassword: string,
   ) {
-    const id = req.user._id as string;
+    const id = req.user._id.toString();
     return this.authService.changePassword(id, currentPassword, newPassword);
   }
 }

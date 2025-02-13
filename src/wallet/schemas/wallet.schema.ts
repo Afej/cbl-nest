@@ -8,6 +8,7 @@ export type WalletDocument = HydratedDocument<Wallet>;
   timestamps: true,
   toJSON: { virtuals: true },
   toObject: { virtuals: true },
+  id: false,
 })
 export class Wallet {
   @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true })

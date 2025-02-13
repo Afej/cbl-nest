@@ -4,20 +4,18 @@ import {
   ConflictException,
   BadRequestException,
 } from '@nestjs/common';
-import { InjectConnection, InjectModel } from '@nestjs/mongoose';
-import { Connection, Model } from 'mongoose';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
 import { User } from './schemas/user.schema';
 import { CreateUserDto, UpdateUserDto } from './dto';
-import { comparePassword, hashPassword, PaginatedResponse } from '../common';
+import { hashPassword, PaginatedResponse } from '../common';
 import { Wallet } from 'src/wallet/schemas/wallet.schema';
-import { IUser } from './types';
 
 @Injectable()
 export class UserService {
   constructor(
     @InjectModel(User.name) private userModel: Model<User>,
     @InjectModel(Wallet.name) private walletModel: Model<Wallet>,
-    @InjectConnection() private connection: Connection,
   ) {}
 
   async create(createUserDto: CreateUserDto): Promise<User> {
@@ -55,10 +53,10 @@ export class UserService {
     page = 1,
     limit = 10,
     populateRelations = true,
-  ): Promise<PaginatedResponse<IUser>> {
+  ): Promise<PaginatedResponse<User>> {
     const skip = (page - 1) * limit;
 
-    const query = this.userModel.find();
+    const query = this.userModel.find().skip(skip).limit(limit);
 
     if (populateRelations) {
       query
@@ -67,12 +65,12 @@ export class UserService {
     }
 
     const total = await this.userModel.countDocuments();
-    const users = await query.skip(skip).limit(limit).lean().exec();
+    const users = await query.lean().exec();
 
     const totalPages = Math.ceil(total / limit);
 
     return {
-      data: users as unknown as IUser[],
+      data: users,
       meta: {
         total,
         page,

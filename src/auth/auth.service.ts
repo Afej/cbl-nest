@@ -37,7 +37,7 @@ export class AuthService {
     }
 
     const secret = this.configService.get<string>('JWT_SECRET') as string;
-    const id = user._id as unknown as string;
+    const id = user._id.toString();
 
     const token = generateJwtToken({
       id,
@@ -54,19 +54,20 @@ export class AuthService {
   }
 
   async getAuthUser(userId: string) {
-    const user = await this.userModel.findById(userId);
-
-    // const user = await this.userModel.findById(userId).populate({
-    //   path: 'wallet',
-    //   select: 'balance',
-    //   match: { userId }, // Only populate if wallet exists for the user
-    // });
+    const user = await this.userModel
+      .findById(userId)
+      .populate({
+        path: 'wallet',
+        model: 'Wallet',
+        select: 'balance',
+      })
+      .lean();
 
     if (!user) {
       throw new NotFoundException('User not found');
     }
 
-    return user.toJSON();
+    return user;
   }
 
   async changePassword(

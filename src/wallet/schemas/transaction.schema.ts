@@ -29,9 +29,6 @@ export class Transaction {
 
   @Prop({ type: TransactionDetailsSchema, required: true })
   details: TransactionDetails;
-
-  // @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'Transaction' })
-  // originalTransactionId?: Transaction; // For reversals
 }
 
 export const TransactionSchema = SchemaFactory.createForClass(Transaction);
