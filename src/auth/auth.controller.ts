@@ -4,6 +4,7 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Patch,
   Post,
   Request,
   UseGuards,
@@ -31,9 +32,14 @@ export class AuthController {
   }
 
   @UseGuards(AuthGuard)
-  @Post('logout')
-  @HttpCode(HttpStatus.NO_CONTENT)
-  logout() {
-    return this.authService.logout();
+  @Patch('change-password')
+  @HttpCode(HttpStatus.OK)
+  changePassword(
+    @Request() req: AuthGuardRequest,
+    @Body('currentPassword') currentPassword: string,
+    @Body('newPassword') newPassword: string,
+  ) {
+    const id = req.user._id as string;
+    return this.authService.changePassword(id, currentPassword, newPassword);
   }
 }

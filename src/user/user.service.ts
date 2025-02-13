@@ -112,7 +112,7 @@ export class UserService {
     return user;
   }
 
-  async remove(id: string): Promise<void> {
+  async remove(id: string): Promise<{ message: string }> {
     const user = await this.userModel.findById(id);
     if (!user) {
       throw new NotFoundException('User not found');
@@ -125,23 +125,9 @@ export class UserService {
     ]);
 
     await user.deleteOne();
-  }
-  async changePassword(
-    id: string,
-    currentPassword: string,
-    newPassword: string,
-  ): Promise<void> {
-    const user = await this.userModel.findById(id).select('+password');
 
-    const payload = {
-      password: currentPassword,
-      hash: user?.password,
+    return {
+      message: `User deleted successfully.`,
     };
-    if (!user || !comparePassword(payload)) {
-      throw new NotFoundException('Invalid credentials');
-    }
-
-    user.password = hashPassword(newPassword);
-    await user.save();
   }
 }

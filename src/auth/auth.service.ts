@@ -6,7 +6,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { comparePassword, generateJwtToken } from 'src/common';
+import { comparePassword, generateJwtToken, hashPassword } from 'src/common';
 import { User } from 'src/user/schemas/user.schema';
 import { LoginDto } from './dto';
 import { AuthenticatedUser } from 'src/user/types';
@@ -69,12 +69,25 @@ export class AuthService {
     return user.toJSON();
   }
 
-  logout() {
-    // TODO: Implement logout logic
-    // For now, just return a success message
+  async changePassword(
+    id: string,
+    currentPassword: string,
+    newPassword: string,
+  ): Promise<{ message: string }> {
+    const user = await this.userModel.findById(id).select('+password');
 
-    return {
-      message: 'Logout successful',
+    const payload = {
+      password: currentPassword,
+      hash: user?.password,
     };
+
+    if (!user || !comparePassword(payload)) {
+      throw new NotFoundException('Invalid credentials');
+    }
+
+    user.password = hashPassword(newPassword);
+    await user.save();
+
+    return { message: 'Password changed successfully' };
   }
 }
