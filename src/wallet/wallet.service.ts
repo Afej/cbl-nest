@@ -131,31 +131,18 @@ export class WalletService {
     }
 
     // Update sender wallet (deduct amount)
-    const updatedSenderWallet = await this.walletModel.findOneAndUpdate(
+    await this.walletModel.findOneAndUpdate(
       { userId },
       { $inc: { balance: -amount } },
       { new: true },
     );
 
     // Update receiver wallet (add amount)
-    const updatedReceiverWallet = await this.walletModel.findOneAndUpdate(
+    await this.walletModel.findOneAndUpdate(
       { userId: receiver._id },
       { $inc: { balance: amount } },
       { new: true },
     );
-
-    // Record transfer transaction for sender
-    await this.createTransaction({
-      userId,
-      walletId: senderWallet._id.toString(),
-      type: 'transfer',
-      details: {
-        from: userId,
-        to: receiver._id.toString(),
-        amount,
-        success: true,
-      },
-    });
 
     // Record deposit transaction for receiver
     await this.createTransaction({
@@ -169,15 +156,20 @@ export class WalletService {
       },
     });
 
-    const data = {
-      senderWallet: updatedSenderWallet,
-      receiverWallet: updatedReceiverWallet,
-    };
+    // Record transfer transaction for sender
+    const transferTransaction = await this.createTransaction({
+      userId,
+      walletId: senderWallet._id.toString(),
+      type: 'transfer',
+      details: {
+        from: userId,
+        to: receiver._id.toString(),
+        amount,
+        success: true,
+      },
+    });
 
-    return {
-      message: 'Transfer successful',
-      data,
-    };
+    return transferTransaction;
   }
 
   async getUserTransactions(
@@ -285,14 +277,14 @@ export class WalletService {
     const receiverWallet = await this.getUserWallet(receiverId);
 
     // Update sender wallet (add amount back)
-    const updatedSenderWallet = await this.walletModel.findOneAndUpdate(
+    await this.walletModel.findOneAndUpdate(
       { userId: senderId },
       { $inc: { balance: amount } },
       { new: true },
     );
 
     // Update receiver wallet (deduct amount)
-    const updatedReceiverWallet = await this.walletModel.findOneAndUpdate(
+    await this.walletModel.findOneAndUpdate(
       { userId: receiverId },
       { $inc: { balance: -amount } },
       { new: true },
@@ -328,15 +320,6 @@ export class WalletService {
       { new: true },
     );
 
-    const data = {
-      transaction: updatedTransaction,
-      senderWallet: updatedSenderWallet,
-      receiverWallet: updatedReceiverWallet,
-    };
-
-    return {
-      message: 'Transaction reversed successfully',
-      data,
-    };
+    return updatedTransaction;
   }
 }

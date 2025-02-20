@@ -8,7 +8,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { comparePassword, generateJwtToken, hashPassword } from 'src/common';
 import { User } from 'src/user/schemas/user.schema';
-import { LoginDto } from './dto';
+import { LoginDto, UpdatePasswordDto, UpdateProfileDto } from './dto';
 import { AuthenticatedUser } from 'src/user/types';
 
 @Injectable()
@@ -72,9 +72,9 @@ export class AuthService {
 
   async changePassword(
     id: string,
-    currentPassword: string,
-    newPassword: string,
+    updatePasswordDto: UpdatePasswordDto,
   ): Promise<{ message: string }> {
+    const { currentPassword, newPassword } = updatePasswordDto;
     const user = await this.userModel.findById(id).select('+password');
 
     const payload = {
@@ -90,5 +90,20 @@ export class AuthService {
     await user.save();
 
     return { message: 'Password changed successfully' };
+  }
+
+  async updateUserProfile(
+    userId: string,
+    updateUserDto: UpdateProfileDto,
+  ): Promise<User> {
+    const user = await this.userModel.findByIdAndUpdate(userId, updateUserDto, {
+      new: true,
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    return user;
   }
 }
