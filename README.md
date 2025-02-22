@@ -17,7 +17,8 @@ A basic banking API service built using nest js with the following features:
 - Transfer funds to other users
 - See a list of their transactions
 - See their wallet
-- See their profile
+- See their profile and edit it
+- Change their password
 
 ### Admin can :
 
@@ -54,7 +55,14 @@ $ yarn run start:dev
 $ yarn run start:prod
 ```
 
-## Documentation
+## API Documentation
+
+Detailed API documentation will be available at `http://<host>:<port>/api#/` after server has been spun up.
+
+Example:
+
+- Local development: [Documentation](http://localhost:3000/api#/)
+- Custom port: Replace port 3000 with your configured port number
 
 [View Postman Documentation](https://documenter.getpostman.com/view/6355780/UVR7Mp3h)
 
