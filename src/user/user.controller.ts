@@ -37,7 +37,6 @@ export class UserController {
   @ApiOperation({ summary: 'Create new user (Admin only)' })
   @ApiCreatedResponse({
     description: 'User created successfully',
-    type: CreateUserDto,
   })
   @Post()
   @HttpCode(HttpStatus.CREATED)
@@ -72,7 +71,6 @@ export class UserController {
   @ApiOperation({ summary: 'Update user (Admin only)' })
   @ApiOkResponse({
     description: 'User updated successfully',
-    type: UpdateUserDto,
   })
   @Patch(':id')
   @HttpCode(HttpStatus.OK)

@@ -44,7 +44,6 @@ export class WalletController {
   @ApiOperation({ summary: 'Deposit funds to wallet' })
   @ApiOkResponse({
     description: 'Deposit successful',
-    type: DepositDto,
   })
   @Post('deposit')
   deposit(@Request() req: AuthGuardRequest, @Body() depositDto: DepositDto) {
@@ -55,7 +54,6 @@ export class WalletController {
   @ApiOperation({ summary: 'Withdraw funds from wallet' })
   @ApiOkResponse({
     description: 'Withdrawal successful',
-    type: WithdrawDto,
   })
   @Post('withdraw')
   withdraw(@Request() req: AuthGuardRequest, @Body() withdrawDto: WithdrawDto) {
@@ -66,7 +64,6 @@ export class WalletController {
   @ApiOperation({ summary: 'Transfer funds to another user' })
   @ApiOkResponse({
     description: 'Transfer successful',
-    type: TransferDto,
   })
   @Post('transfer')
   transfer(@Request() req: AuthGuardRequest, @Body() transferDto: TransferDto) {

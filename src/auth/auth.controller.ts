@@ -28,7 +28,6 @@ export class AuthController {
   @ApiOperation({ summary: 'User login' })
   @ApiOkResponse({
     description: 'Login successful',
-    type: LoginDto,
   })
   @HttpCode(HttpStatus.OK)
   @Post('login')
@@ -51,7 +50,6 @@ export class AuthController {
   @ApiOperation({ summary: 'Change user password' })
   @ApiOkResponse({
     description: 'Password changed successfully',
-    type: UpdatePasswordDto,
   })
   @ApiBearerAuth()
   @UseGuards(AuthGuard)
@@ -68,7 +66,6 @@ export class AuthController {
   @ApiOperation({ summary: 'Update user profile' })
   @ApiOkResponse({
     description: 'Profile updated successfully',
-    type: UpdateProfileDto,
   })
   @ApiBearerAuth()
   @UseGuards(AuthGuard)
