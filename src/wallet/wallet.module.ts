@@ -4,8 +4,8 @@ import { WalletController } from './wallet.controller';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Transaction, TransactionSchema } from './schemas/transaction.schema';
 import { Wallet, WalletSchema } from './schemas/wallet.schema';
-import { User, UserSchema } from 'src/user/schemas/user.schema';
-import { AuthModule } from 'src/auth/auth.module';
+import { User, UserSchema } from '../user/schemas/user.schema';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
   imports: [

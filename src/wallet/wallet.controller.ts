@@ -11,12 +11,12 @@ import {
   Request,
 } from '@nestjs/common';
 import { WalletService } from './wallet.service';
-import { Role } from 'src/common';
+import { Role } from '../common';
 import { DepositDto, WithdrawDto, TransferDto } from './dto';
-import { AuthGuard } from 'src/auth/guards/auth.guard';
-import { Roles } from 'src/auth/decorators/roles.decorator';
-import { RolesGuard } from 'src/auth/guards/roles.guard';
-import { AuthGuardRequest } from 'src/auth/guards/types';
+import { AuthGuard } from '../auth/guards/auth.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { AuthGuardRequest } from '../auth/guards/types';
 import {
   ApiTags,
   ApiBearerAuth,

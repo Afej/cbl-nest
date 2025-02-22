@@ -9,7 +9,7 @@ import { Model } from 'mongoose';
 import { User } from './schemas/user.schema';
 import { CreateUserDto, UpdateUserDto } from './dto';
 import { hashPassword, PaginatedResponse } from '../common';
-import { Wallet } from 'src/wallet/schemas/wallet.schema';
+import { Wallet } from '../wallet/schemas/wallet.schema';
 
 @Injectable()
 export class UserService {

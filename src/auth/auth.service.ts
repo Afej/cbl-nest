@@ -6,10 +6,10 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { comparePassword, generateJwtToken, hashPassword } from 'src/common';
-import { User } from 'src/user/schemas/user.schema';
+import { comparePassword, generateJwtToken, hashPassword } from '../common';
+import { User } from '../user/schemas/user.schema';
 import { LoginDto, UpdatePasswordDto, UpdateProfileDto } from './dto';
-import { AuthenticatedUser } from 'src/user/types';
+import { AuthenticatedUser } from '../user/types';
 
 @Injectable()
 export class AuthService {
