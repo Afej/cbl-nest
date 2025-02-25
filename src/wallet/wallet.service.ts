@@ -89,7 +89,7 @@ export class WalletService {
     const transactionDetails = {
       amount,
       madeBy: userId,
-      description: 'Deposit',
+      description: 'Withdrawal',
       success: true,
     };
 
@@ -183,6 +183,7 @@ export class WalletService {
 
     const query = this.transactionModel
       .find({ walletId: wallet._id })
+      .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit);
 
@@ -211,7 +212,11 @@ export class WalletService {
     populateRelations = true,
   ): Promise<PaginatedResponse<Transaction>> {
     const skip = (page - 1) * limit;
-    const query = this.transactionModel.find().skip(skip).limit(limit);
+    const query = this.transactionModel
+      .find()
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
 
     if (populateRelations) {
       query.populate('userId').populate('walletId');

@@ -10,6 +10,7 @@ import {
   Query,
   ParseIntPipe,
   HttpStatus,
+  Request,
   HttpCode,
 } from '@nestjs/common';
 import { UserService } from './user.service';
@@ -25,6 +26,7 @@ import {
   ApiOkResponse,
   ApiCreatedResponse,
 } from '@nestjs/swagger';
+import { AuthGuardRequest } from 'src/auth/guards/types';
 
 @ApiTags('Admin/Users')
 @Controller('users')
@@ -54,10 +56,11 @@ export class UserController {
   findAll(
     @Query('page', new ParseIntPipe({ optional: true })) page: number,
     @Query('limit', new ParseIntPipe({ optional: true })) limit: number,
+    @Query('search') search?: string,
+    @Query('role') role?: 'admin' | 'user',
   ) {
-    return this.userService.findAll(page, limit);
+    return this.userService.findAll({ page, limit, search, role });
   }
-
   @ApiOperation({ summary: 'Get user by ID (Admin only)' })
   @ApiOkResponse({
     description: 'User retrieved successfully',
@@ -84,7 +87,9 @@ export class UserController {
   })
   @Delete(':id')
   @HttpCode(HttpStatus.OK)
-  remove(@Param('id') id: string) {
-    return this.userService.remove(id);
+  remove(@Param('id') id: string, @Request() req: AuthGuardRequest) {
+    const currentUserId = req.user._id.toString();
+
+    return this.userService.remove(id, currentUserId);
   }
 }

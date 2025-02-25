@@ -5,11 +5,12 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { FilterQuery, Model } from 'mongoose';
 import { User } from './schemas/user.schema';
 import { CreateUserDto, UpdateUserDto } from './dto';
 import { hashPassword, PaginatedResponse } from '../common';
 import { Wallet } from '../wallet/schemas/wallet.schema';
+import { FindAllUsersParams } from './types';
 
 @Injectable()
 export class UserService {
@@ -44,19 +45,40 @@ export class UserService {
       await wallet.save();
 
       return newUser;
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
       throw new BadRequestException('Failed to create user');
     }
   }
 
-  async findAll(
+  async findAll({
     page = 1,
     limit = 10,
     populateRelations = true,
-  ): Promise<PaginatedResponse<User>> {
+    search,
+    role,
+  }: FindAllUsersParams = {}): Promise<PaginatedResponse<User>> {
     const skip = (page - 1) * limit;
 
-    const query = this.userModel.find().skip(skip).limit(limit);
+    const queryConditions: FilterQuery<User> = {};
+
+    if (search) {
+      queryConditions.$or = [
+        { email: { $regex: search, $options: 'i' } },
+        { firstName: { $regex: search, $options: 'i' } },
+        { lastName: { $regex: search, $options: 'i' } },
+      ];
+    }
+
+    if (role) {
+      queryConditions.role = role;
+    }
+
+    const query = this.userModel
+      .find(queryConditions)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
 
     if (populateRelations) {
       query
@@ -64,7 +86,7 @@ export class UserService {
         .populate({ path: 'transactions', model: 'Transaction' });
     }
 
-    const total = await this.userModel.countDocuments();
+    const total = await this.userModel.countDocuments(queryConditions);
     const users = await query.lean().exec();
 
     const totalPages = Math.ceil(total / limit);
@@ -110,7 +132,14 @@ export class UserService {
     return user;
   }
 
-  async remove(id: string): Promise<{ message: string }> {
+  async remove(
+    id: string,
+    currentUserId: string,
+  ): Promise<{ message: string }> {
+    if (id === currentUserId) {
+      throw new BadRequestException('Cannot delete your own account');
+    }
+
     const user = await this.userModel.findById(id);
     if (!user) {
       throw new NotFoundException('User not found');

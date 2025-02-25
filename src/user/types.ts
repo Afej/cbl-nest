@@ -11,3 +11,11 @@ export type AuthenticatedUser = {
   token: string;
   user: Partial<IUser>;
 };
+
+export interface FindAllUsersParams {
+  page?: number;
+  limit?: number;
+  populateRelations?: boolean;
+  search?: string;
+  role?: 'admin' | 'user';
+}
