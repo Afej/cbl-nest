@@ -42,6 +42,12 @@ Copy the content of env.sample into the just created .env file, and add the appr
 $ yarn install
 ```
 
+## Seed admin user to DB if none exists
+
+```bash
+$ yarn seed:admin
+```
+
 ## Compile and run the project
 
 ```bash
