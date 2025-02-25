@@ -6,6 +6,7 @@ import {
   TransactionDetails,
   TransactionDetailsSchema,
 } from './transaction-details.schema';
+import { TransactionStatus, TransactionType } from '../../common';
 
 export type TransactionDocument = HydratedDocument<Transaction>;
 
@@ -17,15 +18,23 @@ export type TransactionDocument = HydratedDocument<Transaction>;
 export class Transaction {
   @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true })
   userId: User;
+
   @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'Wallet', required: true })
   walletId: Wallet;
 
   @Prop({
     type: String,
-    enum: ['deposit', 'withdrawal', 'transfer', 'reversal'],
+    enum: TransactionType,
     required: true,
   })
-  type: string;
+  type: TransactionType;
+
+  @Prop({
+    type: String,
+    enum: TransactionStatus,
+    default: TransactionStatus.COMPLETED,
+  })
+  status: TransactionStatus;
 
   @Prop({ type: TransactionDetailsSchema, required: true })
   details: TransactionDetails;

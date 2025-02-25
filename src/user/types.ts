@@ -1,5 +1,6 @@
 import { Types } from 'mongoose';
 import { User } from './schemas/user.schema';
+import { Role } from '../common';
 
 export interface IUser extends User {
   _id: Types.ObjectId | string;
@@ -17,5 +18,5 @@ export interface FindAllUsersParams {
   limit?: number;
   populateRelations?: boolean;
   search?: string;
-  role?: 'admin' | 'user';
+  role?: Role;
 }

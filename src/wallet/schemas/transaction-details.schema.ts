@@ -21,6 +21,9 @@ export class TransactionDetails {
 
   @Prop({ default: true })
   success: boolean;
+
+  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'Transaction' })
+  originalTransactionId?: string;
 }
 
 export const TransactionDetailsSchema =

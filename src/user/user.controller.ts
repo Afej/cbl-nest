@@ -32,7 +32,7 @@ import { AuthGuardRequest } from 'src/auth/guards/types';
 @Controller('users')
 @ApiBearerAuth()
 @UseGuards(AuthGuard, RolesGuard)
-@Roles(Role.Admin)
+@Roles(Role.ADMIN)
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
@@ -57,7 +57,7 @@ export class UserController {
     @Query('page', new ParseIntPipe({ optional: true })) page: number,
     @Query('limit', new ParseIntPipe({ optional: true })) limit: number,
     @Query('search') search?: string,
-    @Query('role') role?: 'admin' | 'user',
+    @Query('role') role?: Role,
   ) {
     return this.userService.findAll({ page, limit, search, role });
   }

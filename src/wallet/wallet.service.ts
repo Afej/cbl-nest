@@ -9,7 +9,16 @@ import { Model } from 'mongoose';
 import { Wallet, WalletDocument } from './schemas/wallet.schema';
 import { Transaction, TransactionDocument } from './schemas/transaction.schema';
 import { User, UserDocument } from '../user/schemas/user.schema';
-import { PaginatedResponse } from '../common';
+import {
+  PaginatedResponse,
+  TransactionStatus,
+  TransactionType,
+} from '../common';
+import {
+  GetUserTransactionsParams,
+  TransactionFilters,
+  TransactionQueryFilters,
+} from './types';
 
 @Injectable()
 export class WalletService {
@@ -51,7 +60,7 @@ export class WalletService {
     );
 
     const transactionDetails = {
-      amount,
+      amount: Math.abs(amount),
       madeBy: userId,
       description: 'Deposit',
       success: true,
@@ -61,7 +70,7 @@ export class WalletService {
     await this.createTransaction({
       userId,
       walletId: wallet._id.toString(),
-      type: 'deposit',
+      type: TransactionType.DEPOSIT,
       details: transactionDetails,
     });
 
@@ -87,7 +96,7 @@ export class WalletService {
     );
 
     const transactionDetails = {
-      amount,
+      amount: -Math.abs(amount),
       madeBy: userId,
       description: 'Withdrawal',
       success: true,
@@ -97,7 +106,7 @@ export class WalletService {
     await this.createTransaction({
       userId,
       walletId: wallet._id.toString(),
-      type: 'withdrawal',
+      type: TransactionType.WITHDRAWAL,
       details: transactionDetails,
     });
 
@@ -148,10 +157,10 @@ export class WalletService {
     await this.createTransaction({
       userId: receiver._id.toString(),
       walletId: receiverWallet._id.toString(),
-      type: 'deposit',
+      type: TransactionType.DEPOSIT,
       details: {
         from: userId,
-        amount,
+        amount: Math.abs(amount),
         success: true,
       },
     });
@@ -160,11 +169,11 @@ export class WalletService {
     const transferTransaction = await this.createTransaction({
       userId,
       walletId: senderWallet._id.toString(),
-      type: 'transfer',
+      type: TransactionType.TRANSFER,
       details: {
         from: userId,
         to: receiver._id.toString(),
-        amount,
+        amount: -Math.abs(amount),
         success: true,
       },
     });
@@ -172,24 +181,31 @@ export class WalletService {
     return transferTransaction;
   }
 
-  async getUserTransactions(
-    userId: string,
+  async getUserTransactions({
+    userId,
     page = 1,
     limit = 10,
-  ): Promise<PaginatedResponse<Transaction>> {
+    type,
+  }: GetUserTransactionsParams): Promise<PaginatedResponse<Transaction>> {
     const skip = (page - 1) * limit;
 
     const wallet = await this.getUserWallet(userId);
 
+    const filterQuery: TransactionQueryFilters = {
+      walletId: wallet._id,
+    };
+
+    if (type) {
+      filterQuery.type = type;
+    }
+
     const query = this.transactionModel
-      .find({ walletId: wallet._id })
+      .find(filterQuery)
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit);
 
-    const total = await this.transactionModel.countDocuments({
-      walletId: wallet._id,
-    });
+    const total = await this.transactionModel.countDocuments(filterQuery);
     const transactions = await query.lean().exec();
     const totalPages = Math.ceil(total / limit);
 
@@ -206,14 +222,43 @@ export class WalletService {
     };
   }
 
-  async getAllTransactions(
+  private async buildTransactionFilters(
+    filters: TransactionFilters,
+  ): Promise<TransactionQueryFilters> {
+    const queryFilters: TransactionQueryFilters = {};
+
+    if (filters.type) {
+      queryFilters.type = filters.type;
+    }
+
+    if (filters.search) {
+      const users = await this.userModel.find({
+        $or: [
+          { email: { $regex: filters.search, $options: 'i' } },
+          { firstName: { $regex: filters.search, $options: 'i' } },
+          { lastName: { $regex: filters.search, $options: 'i' } },
+        ],
+      });
+
+      const userIds = users.map((user) => user._id);
+      queryFilters.userId = { $in: userIds };
+    }
+
+    return queryFilters;
+  }
+
+  async getAllTransactions({
     page = 1,
     limit = 10,
+    type,
+    search,
     populateRelations = true,
-  ): Promise<PaginatedResponse<Transaction>> {
+  }: TransactionFilters): Promise<PaginatedResponse<Transaction>> {
     const skip = (page - 1) * limit;
+    const filterQuery = await this.buildTransactionFilters({ type, search });
+
     const query = this.transactionModel
-      .find()
+      .find(filterQuery)
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit);
@@ -221,9 +266,9 @@ export class WalletService {
     if (populateRelations) {
       query.populate('userId').populate('walletId');
     }
-    const total = await this.transactionModel.countDocuments();
-    const transactions = await query.lean().exec();
 
+    const total = await this.transactionModel.countDocuments(filterQuery);
+    const transactions = await query.lean().exec();
     const totalPages = Math.ceil(total / limit);
 
     return {
@@ -259,50 +304,46 @@ export class WalletService {
   }
 
   async reverseTransaction(transactionId: string) {
-    const transaction = await this.getTransaction(transactionId);
+    const originalTransaction = await this.getTransaction(transactionId);
 
-    if (transaction.type !== 'transfer') {
+    if (originalTransaction.type !== TransactionType.TRANSFER) {
       throw new BadRequestException(
         'Only transfer transactions can be reversed',
       );
     }
 
-    const { from, to, amount } = transaction.details;
+    if (originalTransaction.status === TransactionStatus.REVERSED) {
+      throw new BadRequestException('Transaction already reversed');
+    }
 
+    const { from, to, amount } = originalTransaction.details;
     const senderId = from as unknown as string;
     const receiverId = to as unknown as string;
 
-    // Check if transaction details are valid
-    if (!senderId || !receiverId || !amount) {
-      throw new BadRequestException('Invalid transaction details');
-    }
-
-    // Get both wallets
+    // Get wallets
     const senderWallet = await this.getUserWallet(senderId);
     const receiverWallet = await this.getUserWallet(receiverId);
 
-    // Update sender wallet (add amount back)
+    // Update balances
     await this.walletModel.findOneAndUpdate(
       { userId: senderId },
-      { $inc: { balance: amount } },
-      { new: true },
+      { $inc: { balance: Math.abs(amount) } },
     );
 
-    // Update receiver wallet (deduct amount)
     await this.walletModel.findOneAndUpdate(
       { userId: receiverId },
-      { $inc: { balance: -amount } },
-      { new: true },
+      { $inc: { balance: -Math.abs(amount) } },
     );
 
-    // Record reversal transactions
+    // Create reversal records
     await this.createTransaction({
       userId: senderId,
       walletId: senderWallet._id.toString(),
-      type: 'reversal',
+      type: TransactionType.REVERSAL,
       details: {
-        amount,
-        description: `Transfer reversal of amount +${amount}`,
+        amount: Math.abs(amount),
+        originalTransactionId: transactionId,
+        description: `Reversal of transfer #${transactionId}`,
         success: true,
       },
     });
@@ -310,21 +351,34 @@ export class WalletService {
     await this.createTransaction({
       userId: receiverId,
       walletId: receiverWallet._id.toString(),
-      type: 'reversal',
+      type: TransactionType.REVERSAL,
       details: {
-        amount,
-        description: `Transfer reversal of amount -${amount}`,
+        amount: -Math.abs(amount),
+        originalTransactionId: transactionId,
+        description: `Reversal of transfer #${transactionId}`,
         success: true,
       },
     });
 
-    // Update original transaction type to prevent multiple reversals
-    const updatedTransaction = await this.transactionModel.findByIdAndUpdate(
-      transactionId,
-      { type: 'reversal' },
-      { new: true },
-    );
+    // Mark original as reversed
+    await this.transactionModel.findByIdAndUpdate(transactionId, {
+      status: TransactionStatus.REVERSED,
+    });
+  }
 
-    return updatedTransaction;
+  async deleteTransaction(id: string) {
+    const transaction = await this.getTransaction(id);
+
+    if (!transaction) {
+      throw new NotFoundException('Transaction not found');
+    }
+
+    if (transaction.status === TransactionStatus.REVERSED) {
+      throw new BadRequestException('Cannot delete a reversed transaction');
+    }
+
+    const deletedTransaction =
+      await this.transactionModel.findByIdAndDelete(id);
+    return deletedTransaction;
   }
 }

@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsNumber, Min, IsString, IsEnum, IsBoolean } from 'class-validator';
+import { TransactionStatus, TransactionType } from '../../common';
 
 export class TransactionDetailsDto {
   @ApiProperty({
@@ -40,11 +41,18 @@ export class TransactionDetailsDto {
   description?: string;
 
   @ApiProperty({
-    description: 'Transaction status',
+    description: 'Transaction success status',
     example: true,
   })
   @IsBoolean()
   success?: boolean;
+
+  @ApiProperty({
+    description: 'Original transaction reference for reversals',
+    example: '507f1f77bcf86cd799439011',
+  })
+  @IsString()
+  originalTransactionId?: string;
 }
 
 export class TransactionDto {
@@ -64,10 +72,18 @@ export class TransactionDto {
 
   @ApiProperty({
     description: 'Type of transaction',
-    enum: ['deposit', 'withdrawal', 'transfer', 'reversal'],
+    enum: TransactionType,
   })
-  @IsEnum(['deposit', 'withdrawal', 'transfer', 'reversal'])
-  type: string;
+  @IsEnum(TransactionType)
+  type: TransactionType;
+
+  @ApiProperty({
+    description: 'Transaction status',
+    enum: TransactionStatus,
+    default: TransactionStatus.COMPLETED,
+  })
+  @IsEnum(TransactionStatus)
+  status?: TransactionStatus;
 
   @ApiProperty({
     description: 'Transaction details',

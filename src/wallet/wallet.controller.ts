@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  Delete,
   Param,
   ParseIntPipe,
   Post,
@@ -11,7 +12,7 @@ import {
   Request,
 } from '@nestjs/common';
 import { WalletService } from './wallet.service';
-import { Role } from '../common';
+import { Role, TransactionType } from '../common';
 import { DepositDto, WithdrawDto, TransferDto } from './dto';
 import { AuthGuard } from '../auth/guards/auth.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -28,7 +29,7 @@ import {
 @ApiTags('Wallet')
 @Controller('wallet')
 @UseGuards(AuthGuard, RolesGuard)
-@Roles(Role.User)
+@Roles(Role.USER)
 @ApiBearerAuth()
 export class WalletController {
   constructor(private readonly walletService: WalletService) {}
@@ -74,33 +75,51 @@ export class WalletController {
   @ApiOperation({ summary: 'Get user transaction history' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({
+    name: 'type',
+    required: false,
+    enum: TransactionType,
+  })
   @ApiOkResponse({ description: 'Transactions retrieved successfully' })
   @Get('transactions')
   getUserTransactions(
     @Request() req: AuthGuardRequest,
     @Query('page', new ParseIntPipe({ optional: true })) page: number,
     @Query('limit', new ParseIntPipe({ optional: true })) limit: number,
+    @Query('type') type?: TransactionType,
   ) {
     const userId = req.user._id.toString();
-    return this.walletService.getUserTransactions(userId, page, limit);
+    return this.walletService.getUserTransactions({
+      userId,
+      page,
+      limit,
+      type,
+    });
   }
 
   @ApiOperation({ summary: 'Get all transactions (Admin only)' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({
+    name: 'type',
+    required: false,
+    enum: TransactionType,
+  })
+  @ApiQuery({ name: 'search', required: false, type: String })
   @ApiOkResponse({ description: 'All transactions retrieved successfully' })
-  @Roles(Role.Admin)
+  @Roles(Role.ADMIN)
   @Get('transactions/all')
   getAllTransactions(
     @Query('page', new ParseIntPipe({ optional: true })) page: number,
     @Query('limit', new ParseIntPipe({ optional: true })) limit: number,
+    @Query('type') type?: TransactionType,
+    @Query('search') search?: string,
   ) {
-    return this.walletService.getAllTransactions(page, limit);
+    return this.walletService.getAllTransactions({ page, limit, type, search });
   }
-
   @ApiOperation({ summary: 'Get single transaction details (Admin only)' })
   @ApiOkResponse({ description: 'Transaction retrieved successfully' })
-  @Roles(Role.Admin)
+  @Roles(Role.ADMIN)
   @Get('transactions/:id')
   getSingleTransaction(@Param('id') id: string) {
     return this.walletService.getTransaction(id);
@@ -108,9 +127,17 @@ export class WalletController {
 
   @ApiOperation({ summary: 'Reverse a transaction (Admin only)' })
   @ApiOkResponse({ description: 'Transaction reversed successfully' })
-  @Roles(Role.Admin)
+  @Roles(Role.ADMIN)
   @Put('transactions/:id/reverse')
   reverseTransaction(@Param('id') id: string) {
     return this.walletService.reverseTransaction(id);
+  }
+
+  @ApiOperation({ summary: 'Delete a transaction (Admin only)' })
+  @ApiOkResponse({ description: 'Transaction deleted successfully' })
+  @Roles(Role.ADMIN)
+  @Delete('transactions/:id')
+  deleteTransaction(@Param('id') id: string) {
+    return this.walletService.deleteTransaction(id);
   }
 }
