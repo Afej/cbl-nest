@@ -15,20 +15,20 @@ A basic banking API service built using nest js with the following features:
 - Deposit money
 - Withdraw money
 - Transfer funds to other users
-- See a list of their transactions
+- See a list of their transactions with filters
 - See their wallet
 - See their profile and edit it
 - Change their password
 
 ### Admin can :
 
-- Get all users
+- Get all users with filters
 - Get single user
 - Add users
 - Delete users
 - Reverse transactions(transfer)
 - Disable a user’s account (update user)
-- Get all user transactions
+- Get all user transactions with filters
 - Get single user transaction
 
 ## Usage
