@@ -113,7 +113,9 @@ export class UserService {
     const query = this.userModel.findById(id);
 
     if (populateRelations) {
-      query.populate({ path: 'wallet', model: 'Wallet', select: 'balance' });
+      query
+        .populate({ path: 'wallet', model: 'Wallet' })
+        .populate({ path: 'transactions', model: 'Transaction' });
     }
 
     const user = await query.lean().exec();
@@ -128,7 +130,8 @@ export class UserService {
   async update(id: string, updateUserDto: UpdateUserDto): Promise<User> {
     const user = await this.userModel
       .findByIdAndUpdate(id, updateUserDto, { new: true })
-      .populate('wallet transactions');
+      .populate({ path: 'wallet', model: 'Wallet' })
+      .populate({ path: 'transactions', model: 'Transaction' });
 
     if (!user) {
       throw new NotFoundException('User not found');
