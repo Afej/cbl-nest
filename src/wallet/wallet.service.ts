@@ -49,8 +49,9 @@ export class WalletService {
   async deposit(userId: string, depositDto: DepositDto) {
     const { amount } = depositDto;
 
-    // Get user wallet
+    // Get user wallet and user details
     const wallet = await this.getUserWallet(userId);
+    const user = await this.userModel.findById(userId);
 
     // Update balance
     const updatedWallet = await this.walletModel.findOneAndUpdate(
@@ -62,7 +63,7 @@ export class WalletService {
     const transactionDetails = {
       amount: Math.abs(amount),
       madeBy: userId,
-      description: 'Deposit',
+      description: `Deposit by ${user?.email || 'user'}`,
       success: true,
     };
 
@@ -80,8 +81,9 @@ export class WalletService {
   async withdraw(userId: string, withdrawDto: WithdrawDto) {
     const { amount } = withdrawDto;
 
-    // Get user wallet
+    // Get user wallet and user details
     const wallet = await this.getUserWallet(userId);
+    const user = await this.userModel.findById(userId);
 
     // Check sufficient balance
     if (wallet.balance < amount) {
@@ -98,7 +100,7 @@ export class WalletService {
     const transactionDetails = {
       amount: -Math.abs(amount),
       madeBy: userId,
-      description: 'Withdrawal',
+      description: `Withdrawal by ${user?.email || 'user'}`,
       success: true,
     };
 
@@ -118,9 +120,14 @@ export class WalletService {
 
     // Get user and receiver info
     const receiver = await this.userModel.findOne({ email: receiverEmail });
+    const sender = await this.userModel.findById(userId);
 
     if (!receiver) {
       throw new NotFoundException(`User not found with email ${receiverEmail}`);
+    }
+
+    if (!sender) {
+      throw new NotFoundException(`Sender not found`);
     }
 
     // Prevent self-transfer
@@ -162,6 +169,7 @@ export class WalletService {
         from: userId,
         amount: Math.abs(amount),
         success: true,
+        description: `Received transfer from ${sender.email}`,
       },
     });
 
@@ -175,6 +183,7 @@ export class WalletService {
         to: receiver._id.toString(),
         amount: -Math.abs(amount),
         success: true,
+        description: `Transfer to ${receiverEmail}`,
       },
     });
 
@@ -186,6 +195,7 @@ export class WalletService {
     page = 1,
     limit = 10,
     type,
+    status,
   }: GetUserTransactionsParams): Promise<PaginatedResponse<Transaction>> {
     const skip = (page - 1) * limit;
 
@@ -197,6 +207,10 @@ export class WalletService {
 
     if (type) {
       filterQuery.type = type;
+    }
+
+    if (status) {
+      filterQuery.status = status;
     }
 
     const query = this.transactionModel
@@ -231,6 +245,10 @@ export class WalletService {
       queryFilters.type = filters.type;
     }
 
+    if (filters.status) {
+      queryFilters.status = filters.status;
+    }
+
     if (filters.search) {
       const users = await this.userModel.find({
         $or: [
@@ -251,11 +269,16 @@ export class WalletService {
     page = 1,
     limit = 10,
     type,
+    status,
     search,
     populateRelations = true,
   }: TransactionFilters): Promise<PaginatedResponse<Transaction>> {
     const skip = (page - 1) * limit;
-    const filterQuery = await this.buildTransactionFilters({ type, search });
+    const filterQuery = await this.buildTransactionFilters({
+      type,
+      status,
+      search,
+    });
 
     const query = this.transactionModel
       .find(filterQuery)
@@ -320,6 +343,10 @@ export class WalletService {
     const senderId = from as unknown as string;
     const receiverId = to as unknown as string;
 
+    // Get users for better descriptions
+    const sender = await this.userModel.findById(senderId);
+    const receiver = await this.userModel.findById(receiverId);
+
     // Get wallets
     const senderWallet = await this.getUserWallet(senderId);
     const receiverWallet = await this.getUserWallet(receiverId);
@@ -343,7 +370,7 @@ export class WalletService {
       details: {
         amount: Math.abs(amount),
         originalTransactionId: transactionId,
-        description: `Reversal of transfer #${transactionId}`,
+        description: `Reversal: Refund received from ${receiver?.email || 'user'}`,
         success: true,
       },
     });
@@ -355,7 +382,7 @@ export class WalletService {
       details: {
         amount: -Math.abs(amount),
         originalTransactionId: transactionId,
-        description: `Reversal of transfer #${transactionId}`,
+        description: `Reversal: Refund sent to ${sender?.email || 'user'}`,
         success: true,
       },
     });
@@ -364,21 +391,5 @@ export class WalletService {
     await this.transactionModel.findByIdAndUpdate(transactionId, {
       status: TransactionStatus.REVERSED,
     });
-  }
-
-  async deleteTransaction(id: string) {
-    const transaction = await this.getTransaction(id);
-
-    if (!transaction) {
-      throw new NotFoundException('Transaction not found');
-    }
-
-    if (transaction.status === TransactionStatus.REVERSED) {
-      throw new BadRequestException('Cannot delete a reversed transaction');
-    }
-
-    const deletedTransaction =
-      await this.transactionModel.findByIdAndDelete(id);
-    return deletedTransaction;
   }
 }

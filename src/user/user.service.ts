@@ -57,6 +57,7 @@ export class UserService {
     populateRelations = true,
     search,
     role,
+    status,
   }: FindAllUsersParams = {}): Promise<PaginatedResponse<User>> {
     const skip = (page - 1) * limit;
 
@@ -72,6 +73,10 @@ export class UserService {
 
     if (role) {
       queryConditions.role = role;
+    }
+
+    if (status) {
+      queryConditions.status = status;
     }
 
     const query = this.userModel

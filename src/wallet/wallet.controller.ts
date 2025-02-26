@@ -2,7 +2,6 @@ import {
   Body,
   Controller,
   Get,
-  Delete,
   Param,
   ParseIntPipe,
   Post,
@@ -131,13 +130,5 @@ export class WalletController {
   @Put('transactions/:id/reverse')
   reverseTransaction(@Param('id') id: string) {
     return this.walletService.reverseTransaction(id);
-  }
-
-  @ApiOperation({ summary: 'Delete a transaction (Admin only)' })
-  @ApiOkResponse({ description: 'Transaction deleted successfully' })
-  @Roles(Role.ADMIN)
-  @Delete('transactions/:id')
-  deleteTransaction(@Param('id') id: string) {
-    return this.walletService.deleteTransaction(id);
   }
 }
