@@ -11,7 +11,7 @@ import {
   Request,
 } from '@nestjs/common';
 import { WalletService } from './wallet.service';
-import { Role, TransactionType } from '../common';
+import { Role, TransactionStatus, TransactionType } from '../common';
 import { DepositDto, WithdrawDto, TransferDto } from './dto';
 import { AuthGuard } from '../auth/guards/auth.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -79,6 +79,11 @@ export class WalletController {
     required: false,
     enum: TransactionType,
   })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    enum: TransactionStatus,
+  })
   @ApiOkResponse({ description: 'Transactions retrieved successfully' })
   @Get('transactions')
   getUserTransactions(
@@ -86,6 +91,7 @@ export class WalletController {
     @Query('page', new ParseIntPipe({ optional: true })) page: number,
     @Query('limit', new ParseIntPipe({ optional: true })) limit: number,
     @Query('type') type?: TransactionType,
+    @Query('status') status?: TransactionStatus,
   ) {
     const userId = req.user._id.toString();
     return this.walletService.getUserTransactions({
@@ -93,6 +99,7 @@ export class WalletController {
       page,
       limit,
       type,
+      status,
     });
   }
 
@@ -104,6 +111,11 @@ export class WalletController {
     required: false,
     enum: TransactionType,
   })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    enum: TransactionStatus,
+  })
   @ApiQuery({ name: 'search', required: false, type: String })
   @ApiOkResponse({ description: 'All transactions retrieved successfully' })
   @Roles(Role.ADMIN)
@@ -112,9 +124,16 @@ export class WalletController {
     @Query('page', new ParseIntPipe({ optional: true })) page: number,
     @Query('limit', new ParseIntPipe({ optional: true })) limit: number,
     @Query('type') type?: TransactionType,
+    @Query('status') status?: TransactionStatus,
     @Query('search') search?: string,
   ) {
-    return this.walletService.getAllTransactions({ page, limit, type, search });
+    return this.walletService.getAllTransactions({
+      page,
+      limit,
+      type,
+      search,
+      status,
+    });
   }
   @ApiOperation({ summary: 'Get single transaction details (Admin only)' })
   @ApiOkResponse({ description: 'Transaction retrieved successfully' })

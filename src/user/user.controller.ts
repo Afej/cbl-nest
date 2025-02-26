@@ -15,7 +15,7 @@ import {
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto, UpdateUserDto } from './dto';
-import { Role } from '../common';
+import { AccountStatus, Role } from '../common';
 import { AuthGuard } from '../auth/guards/auth.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -25,6 +25,7 @@ import {
   ApiOperation,
   ApiOkResponse,
   ApiCreatedResponse,
+  ApiQuery,
 } from '@nestjs/swagger';
 import { AuthGuardRequest } from 'src/auth/guards/types';
 
@@ -47,6 +48,14 @@ export class UserController {
   }
 
   @ApiOperation({ summary: 'Get all users (Admin only)' })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({ name: 'search', required: false, type: String })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    enum: AccountStatus,
+  })
   @ApiOkResponse({
     description: 'Users retrieved successfully',
     isArray: true,
@@ -58,8 +67,9 @@ export class UserController {
     @Query('limit', new ParseIntPipe({ optional: true })) limit: number,
     @Query('search') search?: string,
     @Query('role') role?: Role,
+    @Query('status') status?: AccountStatus,
   ) {
-    return this.userService.findAll({ page, limit, search, role });
+    return this.userService.findAll({ page, limit, search, role, status });
   }
   @ApiOperation({ summary: 'Get user by ID (Admin only)' })
   @ApiOkResponse({
