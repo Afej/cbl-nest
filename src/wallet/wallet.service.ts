@@ -10,6 +10,7 @@ import { Wallet, WalletDocument } from './schemas/wallet.schema';
 import { Transaction, TransactionDocument } from './schemas/transaction.schema';
 import { User, UserDocument } from '../user/schemas/user.schema';
 import {
+  AccountStatus,
   PaginatedResponse,
   TransactionStatus,
   TransactionType,
@@ -53,6 +54,12 @@ export class WalletService {
     const wallet = await this.getUserWallet(userId);
     const user = await this.userModel.findById(userId);
 
+    if (user?.accountStatus !== AccountStatus.ACTIVE) {
+      throw new BadRequestException(
+        'Account is not active. Cannot perform action.',
+      );
+    }
+
     // Update balance
     const updatedWallet = await this.walletModel.findOneAndUpdate(
       { userId },
@@ -84,6 +91,12 @@ export class WalletService {
     // Get user wallet and user details
     const wallet = await this.getUserWallet(userId);
     const user = await this.userModel.findById(userId);
+
+    if (user?.accountStatus !== AccountStatus.ACTIVE) {
+      throw new BadRequestException(
+        'Account is not active. Cannot perform action.',
+      );
+    }
 
     // Check sufficient balance
     if (wallet.balance < amount) {
@@ -121,6 +134,12 @@ export class WalletService {
     // Get user and receiver info
     const receiver = await this.userModel.findOne({ email: receiverEmail });
     const sender = await this.userModel.findById(userId);
+
+    if (sender?.accountStatus !== AccountStatus.ACTIVE) {
+      throw new BadRequestException(
+        'Account is not active. Cannot perform action.',
+      );
+    }
 
     if (!receiver) {
       throw new NotFoundException(`User not found with email ${receiverEmail}`);
