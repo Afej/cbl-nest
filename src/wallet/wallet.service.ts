@@ -150,7 +150,7 @@ export class WalletService {
     }
 
     // Prevent self-transfer
-    if (receiverEmail === userId) {
+    if (receiverEmail === sender.email) {
       throw new BadRequestException('Cannot transfer to your own account');
     }
 
