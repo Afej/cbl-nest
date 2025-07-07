@@ -11,6 +11,7 @@ A basic banking API service built using nest js with the following features:
 
 ### Users can :
 
+- Register for a new account
 - Login
 - Deposit money
 - Withdraw money
@@ -27,7 +28,7 @@ A basic banking API service built using nest js with the following features:
 - Add users
 - Delete users
 - Reverse transactions(transfer)
-- Disable a user’s account (update user)
+- Disable a user's account (update user)
 - Get all user transactions with filters
 - Get single user transaction
 

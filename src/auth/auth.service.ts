@@ -8,7 +8,12 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { comparePassword, generateJwtToken, hashPassword } from '../common';
 import { User } from '../user/schemas/user.schema';
-import { LoginDto, UpdatePasswordDto, UpdateProfileDto } from './dto';
+import {
+  LoginDto,
+  UpdatePasswordDto,
+  UpdateProfileDto,
+  RegisterDto,
+} from './dto';
 import { AuthenticatedUser } from '../user/types';
 
 @Injectable()
@@ -105,5 +110,40 @@ export class AuthService {
     }
 
     return user;
+  }
+
+  async register(registerDto: RegisterDto): Promise<AuthenticatedUser> {
+    // Check if user exists
+    const existingUser = await this.userModel.findOne({
+      email: registerDto.email,
+    });
+    if (existingUser) {
+      throw new BadRequestException('Email already exists');
+    }
+    // Hash password
+    const hashedPassword = hashPassword(registerDto.password);
+    // Create user with default role and status
+    const user = new this.userModel({
+      ...registerDto,
+      password: hashedPassword,
+      role: 'user',
+      status: 'active',
+    });
+    await user.save();
+    // Create wallet
+    await this.userModel.db.model('Wallet').create({ userId: user._id });
+    // Generate JWT
+    const secret = this.configService.get<string>('JWT_SECRET') as string;
+    const id = user._id.toString();
+    const token = generateJwtToken({ id, secret });
+    // Remove password from user object
+    const userResponse = { ...user.toJSON() };
+    if ('password' in userResponse) {
+      delete (userResponse as { password?: string }).password;
+    }
+    return {
+      token,
+      user: userResponse,
+    };
   }
 }

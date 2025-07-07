@@ -29,7 +29,7 @@ import {
 } from '@nestjs/swagger';
 import { AuthGuardRequest } from 'src/auth/guards/types';
 
-@ApiTags('Admin/Users')
+@ApiTags('Admin')
 @Controller('users')
 @ApiBearerAuth()
 @UseGuards(AuthGuard, RolesGuard)

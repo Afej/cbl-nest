@@ -19,11 +19,20 @@ import {
   ApiOperation,
   ApiOkResponse,
 } from '@nestjs/swagger';
+import { RegisterDto } from './dto';
 
 @ApiTags('Authentication')
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
+
+  @ApiOperation({ summary: 'User registration' })
+  @ApiOkResponse({ description: 'Registration successful' })
+  @Post('register')
+  @HttpCode(HttpStatus.CREATED)
+  register(@Body() registerDto: RegisterDto) {
+    return this.authService.register(registerDto);
+  }
 
   @ApiOperation({ summary: 'User login' })
   @ApiOkResponse({
